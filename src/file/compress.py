@@ -4,7 +4,7 @@ import shutil
 import zipfile
 import tempfile
 
-from ..error.error import InvalidFileTypeError
+from ..error import InvalidFileTypeError
 
 
 def write_zip_archive(filename_zip: str, save_path: str, path_dir_arquivos: str | None = None, lista_arquivos: List[str] = []) -> Path:

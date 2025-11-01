@@ -4,7 +4,7 @@ import os
 from datetime import datetime, timedelta
 import random
 
-from utils.error import NotFoundError
+from ..error import NotFoundError
 
 
 def read_excel(file_path: str, excel_sheet: str | int = 0, **kwargs) -> pd.DataFrame:

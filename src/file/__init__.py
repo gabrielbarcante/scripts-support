@@ -7,6 +7,7 @@ from .base_64 import convert_file_to_base64, save_file_base_64
 from .compress import write_zip_archive, unarchive_compress_file, get_unarchive_formats
 from .temporary import generate_random_filename, generate_temp_file
 from .operations import find_object_in_directory, check_object_exists, delete_object, delete_objects_in_directory, separate_file_extension, wait_for_files
+from .plain_text import escrever_lista_txt, ler_arquivo_txt
 
 __all__ = [
     "convert_file_to_base64",
@@ -21,5 +22,7 @@ __all__ = [
     "delete_object",
     "delete_objects_in_directory",
     "separate_file_extension",
-    "wait_for_files"
+    "wait_for_files",
+    "escrever_lista_txt",
+    "ler_arquivo_txt"
 ]

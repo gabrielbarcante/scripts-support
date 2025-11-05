@@ -7,3 +7,11 @@ temp/
 # Files to ignore
 .env
 test.py
+
+
+# pytest files to ignore
+pytest-cov.ini
+pytest-html.ini
+pytest-debug.ini
+.coverage
+coverage_relatorio_html/

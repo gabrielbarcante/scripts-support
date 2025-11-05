@@ -55,7 +55,7 @@ def is_timezone_aware(dt: datetime) -> bool:
     return dt.tzinfo is not None and dt.utcoffset() is not None
 
 
-def add_days_to_date(date: datetime, add_days: int = 0, format: str = "%Y-%m-%d %H:%M:%S", as_string: bool = True, return_tzinfo: bool = False) -> datetime | str:
+def add_days_to_date(date: datetime, add_days: int, format: str = "%Y-%m-%d %H:%M:%S", as_string: bool = True, return_tzinfo: bool = False) -> datetime | str:
     """
     Add days to a datetime object and return it in the desired format.
     

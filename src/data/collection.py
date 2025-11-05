@@ -7,15 +7,26 @@ def chunk_it(sequence_data: Sequence, chunk_size: int) -> Iterator[Sequence]:
     
     Args:
         sequence_data: The sequence to be split into chunks.
-        chunk_size: The maximum size of each chunk.
+        chunk_size: The maximum size of each chunk. Must be a positive integer.
         
     Yields:
-        Sequence: Successive chunks from the input sequence.
+        Sequence: Successive chunks from the input sequence. Each chunk will have
+                  `chunk_size` elements except possibly the last chunk, which may
+                  have fewer elements if the sequence length is not evenly divisible
+                  by `chunk_size`.
+        
+    Raises:
+        ValueError: If chunk_size is not a positive integer.
         
     Example:
         >>> list(chunk_it([1, 2, 3, 4, 5], 2))
         [[1, 2], [3, 4], [5]]
+        >>> list(chunk_it('abcdefg', 3))
+        ['abc', 'def', 'g']
     """
+    if chunk_size <= 0:
+        raise ValueError("chunk_size must be a positive integer")
+    
     num_chunks = (len(sequence_data) + chunk_size - 1) // chunk_size
     
     for i in range(num_chunks):

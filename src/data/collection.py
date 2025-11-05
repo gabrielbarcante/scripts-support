@@ -1,4 +1,4 @@
-from typing import Sequence, Iterator, Dict, Tuple, List
+from typing import Sequence, Iterator, Dict, List, Any, Hashable
 
 
 def chunk_it(sequence_data: Sequence, chunk_size: int) -> Iterator[Sequence]:
@@ -50,18 +50,23 @@ def flatten_matrix(matrix: Sequence[Sequence]) -> Sequence:
     return [item for sublist in matrix for item in sublist]
 
 
-def filter_dict_by_value(dictionary: Dict, filter_value: str, nested_key: str | int | float | Tuple | None = None, exact_match: bool = True) -> List:
+def filter_dict_by_value(dictionary: Dict, filter_value: Any, nested_key: Hashable | None = None, exact_match: bool = True) -> List:
     """
     Filter dictionary keys by value, with optional nested key access and matching mode.
     
     Args:
         dictionary: The dictionary to filter.
         filter_value: The value to filter by.
-        nested_key: Optional key to access nested dictionary values.
+        nested_key: Optional key to access nested dictionary values. If the key doesn't exist in a nested dict, that item will be skipped. If None, use the top-level value.
         exact_match: If True, use equality (==). If False, use containment (in).
+                     When False, both the value and filter_value should support the 'in' operator.
         
     Returns:
         List: Keys of dictionary entries that match the filter criteria.
+        
+    Raises:
+        KeyError: If nested_key is specified but doesn't exist in a nested dictionary.
+        TypeError: If exact_match is False and the values don't support containment check.
         
     Example:
         >>> d = {'a': 'test', 'b': 'testing', 'c': 'other'}

@@ -97,7 +97,7 @@ def filter_dict_keys_by_value(dictionary: Dict, filter_value: Any, nested_key: H
     return list(dict(filtered).keys())
 
 
-def filter_list_of_dicts_by_value(dict_list: Sequence[Dict], filter_field: str, filter_value: str) -> List:
+def filter_list_of_dicts_by_value(dict_list: Sequence[Dict], filter_field: Hashable, filter_value: Any) -> List:
     """
     Filter a list of dictionaries by matching a specific field value.
     

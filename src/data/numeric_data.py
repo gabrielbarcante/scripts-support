@@ -105,7 +105,7 @@ def convert_number_to_currency(value: int | float, symbol: str = "R$", decimal_p
 
     parts = formatted_value.split(".")
     integer_part = parts[0]
-    decimal_part = parts[1] if len(parts) > 1 else "00"
+    decimal_part = parts[1] if len(parts) > 1 else "0"*decimal_places
     
     formatted_integer = ""
     for i, digit in enumerate(reversed(integer_part)):
@@ -113,4 +113,4 @@ def convert_number_to_currency(value: int | float, symbol: str = "R$", decimal_p
             formatted_integer = thousand_separator + formatted_integer
         formatted_integer = digit + formatted_integer
 
-    return f"{sign}{symbol} {formatted_integer}{decimal_separator}{decimal_part}"
+    return f"{sign}{symbol} {formatted_integer}{decimal_separator if decimal_part else ''}{decimal_part}"

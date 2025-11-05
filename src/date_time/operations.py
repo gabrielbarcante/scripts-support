@@ -102,13 +102,13 @@ def get_month_start_end(year: int, month: int, format: str = "%Y-%m-%d", as_stri
         return start_date, end_date
 
 
-def format_date(date_string: str, original_format: str = "%d/%m/%Y", new_format: str = "%Y-%m-%d %H:%M:%S") -> str:
+def format_date(date_string: str, original_format: str = "%d/%m/%Y %H:%M:%S", new_format: str = "%Y-%m-%d %H:%M:%S") -> str:
     """
     Convert a date string from one format to another.
     
     Args:
         date_string: Date string to convert
-        original_format: Current format of the date string (default: "%d/%m/%Y")
+        original_format: Current format of the date string (default: "%d/%m/%Y %H:%M:%S")
         new_format: Target format for the date string (default: "%Y-%m-%d %H:%M:%S")
     
     Returns:

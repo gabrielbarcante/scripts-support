@@ -1,53 +1,51 @@
 import re
 
-def remove_punctuation(text: str) -> str:
+def remove_special_characters(text: str, keep_unicode: bool = True, normalize_whitespace: bool = True, remove_whitespace: bool = False) -> str:
     """
-    Remove punctuation from a string.
+    Remove punctuation and special characters from a string, keeping only alphanumeric characters and spaces.
     
     Args:
-        text: The string from which punctuation will be removed.
+        text: The string from which special characters will be removed.
+        keep_unicode: If True, keeps Unicode word characters (letters, digits from any language). 
+                      If False, keeps only ASCII letters and digits. Default is True.
+        normalize_whitespace: If True, collapses multiple consecutive spaces into one.
+                              Ignored if remove_whitespace is True. Default is True.
+        remove_whitespace: If True, removes all whitespace from the string.
+                           If False, preserves spaces and applies normalization. Default is False.
     
     Returns:
-        The string without punctuation.
+        str: The cleaned string with special characters removed.
+    
+    Raises:
+        ValueError: If input is not a string.
     
     Examples:
-        >>> remove_punctuation("Hello, world!")
-        'Hello world'
-        >>> remove_punctuation("Python is great.")
-        'Python is great'
+        >>> remove_special_characters("Hello, World!")
+        "Hello World"
+        >>> remove_special_characters("Hello___World", keep_unicode=True)
+        "HelloWorld"
+        >>> remove_special_characters("Price: $100", remove_whitespace=True)
+        "Price100"
     """
+    if normalize_whitespace and remove_whitespace:
+        raise ValueError("normalize_whitespace cannot be True when remove_whitespace is True")
+    
     if not isinstance(text, str):
         raise ValueError("Input must be a string")
-    
-    if not text:
-        raise ValueError("Input string is empty")
-    
-    return re.sub(r"[^\w\s]", "", text)
 
+    if keep_unicode:
+        # Remove punctuation and special chars, but keep Unicode letters/digits
+        text = re.sub(r"[^\w\s]|_", "", text)
+    else:
+        # Only keep ASCII letters, digits, and spaces
+        text = re.sub(r"[^a-zA-Z0-9\s]", "", text)
 
-def return_only_letters_numbers(text: str) -> str:
-    """
-    Return only letters and numbers from a string, removing all other characters.
-    
-    Args:
-        text: The string to process.
-    
-    Returns:
-        A string containing only alphanumeric characters (no spaces or special characters).
-    
-    Examples:
-        >>> return_only_letters_numbers("Hello, World! 123")
-        'HelloWorld123'
-        >>> return_only_letters_numbers("Python_3.11")
-        'Python311'
-    """
-    if not isinstance(text, str):
-        raise ValueError("Input must be a string")
-    
-    if not text:
-        raise ValueError("Input string is empty")
-    
-    return re.sub(r"[\W_]", "", text)
+    if remove_whitespace:
+        text = re.sub(r"\s+", "", text)
+    else:
+        if normalize_whitespace:
+            text = re.sub(r"\s+", " ", text)
+        text = text.strip()
 
-
+    return text
 

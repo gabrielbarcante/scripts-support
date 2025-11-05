@@ -6,9 +6,12 @@ def convert_string_to_float(number_text: str, raise_exception: bool = True, retu
     """
     Convert a string representation of a number to a float.
     
-    Handles various number formats including:
-    - Standard formats: "123.45" or "123,45"
-    - Thousand separators: "1.234,56" (Brazilian) or "1,234.56" (American)
+    Handles various number formats by attempting conversions in this order:
+    1. Standard Python float format: "123.45" → 123.45
+    2. Brazilian format with thousand separators: "1.234,56" → 1234.56
+    3. American format with thousand separators: "1,234.56" → 1234.56
+    
+    Note: Ambiguous formats without thousand separators (e.g., "1234" or "1234.56") are handled by standard Python float conversion in step 1.
     
     Args:
         number_text: String representation of the number to convert
@@ -20,6 +23,16 @@ def convert_string_to_float(number_text: str, raise_exception: bool = True, retu
     
     Raises:
         ValueError: If input is not a string, is empty, or cannot be converted to float (when raise_exception is True)
+    
+    Examples:
+        >>> convert_string_to_float("123.45")
+        123.45
+        >>> convert_string_to_float("1.234,56")  # Brazilian format
+        1234.56
+        >>> convert_string_to_float("1,234.56")  # American format
+        1234.56
+        >>> convert_string_to_float("invalid", raise_exception=False, return_on_error=None)
+        None
     """
     try:
         if not isinstance(number_text, str):

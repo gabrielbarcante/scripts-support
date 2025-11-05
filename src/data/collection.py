@@ -50,7 +50,7 @@ def flatten_matrix(matrix: Sequence[Sequence]) -> Sequence:
     return [item for sublist in matrix for item in sublist]
 
 
-def filter_dict_by_value(dictionary: Dict, filter_value: Any, nested_key: Hashable | None = None, exact_match: bool = True) -> List:
+def filter_dict_keys_by_value(dictionary: Dict, filter_value: Any, nested_key: Hashable | None = None, exact_match: bool = True) -> List:
     """
     Filter dictionary keys by value, with optional nested key access and matching mode.
     

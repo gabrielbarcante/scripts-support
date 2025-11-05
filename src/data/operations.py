@@ -77,30 +77,29 @@ def prepare_regex_pattern(term: str, space_between_chars: bool = False) -> str:
     return term
 
 
-def validate_match(search_value: str, comparison: str, regex: bool = False, prepare_search_value: bool = False, case_sensitive: bool = False, exact_match: bool = False) -> bool:
+def match_string(search_value: str, comparison: str, regex: bool = False, prepare_search_value: bool = False, case_sensitive: bool = False, exact_match: bool = False) -> bool:
     """
-    Validate if a search value matches a comparison string.
+    Check if a search value matches a comparison string.
     
     Args:
         search_value: The value to search for.
         comparison: The string to search in.
         regex: If True, treat search_value as a regex pattern.
-        prepare_search_value: If True, automatically escape special regex characters, like '.', '+', '*', ..., and process <regex>...</regex> tags using prepare_regex_pattern(). 
-                              Only applies when regex=True.
+        prepare_search_value: If True, automatically escape special regex characters, like '.', '+', '*', ..., and process <regex>...</regex> tags using prepare_regex_pattern(). Only applies when regex=True.
         case_sensitive: If True, perform case-sensitive matching.
         exact_match: If True, require exact match (or full string match for regex).
         
     Returns:
-        bool: True if the validation passes, False otherwise.
+        bool: True if the search value matches, False otherwise.
         
     Example:
-        >>> validate_match("test", "This is a test")
+        >>> match_string("test", "This is a test")
         True
-        >>> validate_match("TEST", "test", case_sensitive=True)
+        >>> match_string("TEST", "test", case_sensitive=True)
         False
-        >>> validate_match("test", "test", exact_match=True)
+        >>> match_string("test", "test", exact_match=True)
         True
-        >>> validate_match("test.com", "visit test.com", regex=True, escape_search_value=True)
+        >>> match_string("test.com", "visit test.com", regex=True, prepare_search_value=True)
         True
     """
     if not isinstance(search_value, str):

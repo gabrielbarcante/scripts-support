@@ -6,7 +6,7 @@ Imports and exports all custom data handling functions.
 from .collection import chunk_it, flatten_matrix, filter_dict_keys_by_value, filter_list_of_dicts_by_value
 from .numeric_data import convert_number_to_currency, convert_string_to_float
 from .text_data import remove_special_characters
-from .operations import prepare_regex_pattern, validate_match
+from .operations import prepare_regex_pattern, match_string
 
 __all__ = [
     "chunk_it",
@@ -17,5 +17,5 @@ __all__ = [
     "convert_string_to_float",
     "remove_special_characters",
     "prepare_regex_pattern",
-    "validate_match"
+    "match_string"
 ]

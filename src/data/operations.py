@@ -108,6 +108,9 @@ def match_string(search_value: str, comparison: str, regex: bool = False, prepar
     if not isinstance(comparison, str):
         raise ValueError("comparison must be a string")
     
+    if prepare_search_value and not regex:
+        raise ValueError("prepare_search_value can only be used when regex=True")
+    
     if not search_value and not comparison:
         return search_value == comparison
 

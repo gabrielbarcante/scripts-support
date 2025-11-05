@@ -25,7 +25,6 @@ def get_now(format: str = "%Y-%m-%d %H:%M:%S", add_days: int = 0, timezone: str 
 
     tz = pytz.timezone(timezone)
     now = datetime.now(tz)
-    now = now + timedelta(days=add_days)
 
     return add_days_to_date(now, add_days=add_days, format=format, as_string=as_string, return_tzinfo=return_tzinfo)
 

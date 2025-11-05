@@ -21,7 +21,7 @@ def prepare_regex_pattern(term: str, space_between_chars: bool = False) -> str:
         raise ValueError("Input term must be a string")
     
     if not term:
-        raise ValueError("Input term is empty")
+        return term
 
     place_holder = "<<<REGEX_PLACEHOLDER>>>"
     raw_regex = None

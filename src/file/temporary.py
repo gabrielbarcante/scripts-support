@@ -16,7 +16,7 @@ def generate_random_filename(extension: str, method: Literal["uuid", "secure", "
         extension (str): File extension without the dot.
         method (RANDOM_FILENAME_METHOD): Method to generate random name. 
             Options: 'uuid', 'secure', 'timestamp', 'simple'. Defaults to "uuid".
-        length (int): Length of the random name (for 'secure' and 'simple' methods). Defaults to 16.
+        length (int): Length of the random name (for 'secure', 'simple', and 'timestamp' methods). Defaults to 16.
         prefix (str): Optional prefix for the filename. Defaults to "".
         suffix (str): Optional suffix for the filename. Defaults to "".
 

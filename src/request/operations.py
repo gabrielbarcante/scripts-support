@@ -37,9 +37,13 @@ def request(method: METHODS, url: str, params: Dict | None = None, headers: Dict
     response = requests.request(method=method, url=url, params=params, headers=headers, auth=auth, json=request_json, data=data, timeout=timeout, verify=verify, **kwargs)
     status_code = response.status_code
     try:
-        response_body = response.json() if response.content else {}
+        response_body = response.json()
     except requests.exceptions.JSONDecodeError:
-        response_body = {"content": response.text}
+        if not response.content:
+            response_body = {}
+        else:
+            print(f"Warning: Response from {url} is not valid JSON, returning raw content")
+            response_body = {"content": response.content.decode(response.encoding or "utf-8", errors="replace")}
 
     return status_code, response_body
 

@@ -62,32 +62,71 @@ def generate_random_filename(extension: str, method: Literal["uuid", "secure", "
     return complete_name
 
 
-def generate_temp_file(filename: str | None = None, extension: str | None = None, prefix: str = "") -> Path:
+def generate_temp_file(filename: str | None = None, extension: str | None = None, unique: bool = True) -> Path:
     """
     Generate a temporary file with optional custom name or extension.
 
     Args:
         filename (str | None): Complete filename. If None, a random name will be generated. Defaults to None.
         extension (str | None): File extension without dot. Required if filename is None. Defaults to None.
-        prefix (str): Prefix for the temporary file. Defaults to "".
+        unique (bool): If True and filename exists, append a suffix to make it unique. If False, raise FileExistsError. Defaults to True.
 
     Returns:
         Path: Absolute path to the created temporary file.
 
     Raises:
-        ValueError: If both filename and extension are None.
+        ValueError: If both filename and extension are None, or if filename has no extension and extension is not provided.
+        FileExistsError: If unique is False and the file already exists.
 
     Examples:
-        >>> temp_file = generate_temp_file(extension="csv", prefix="test_")
+        >>> temp_file = generate_temp_file(extension="csv")
         >>> print(temp_file)
-        /tmp/test_abc123.csv
+        /tmp/abc123.csv
+        
+        >>> temp_file = generate_temp_file(filename="myfile.txt", unique=True)
+        >>> print(temp_file)
+        /tmp/myfile.txt  # or /tmp/myfile_1.txt if it exists
     """
-    if filename is None:
-        if extension is None:
-            raise ValueError(
-                "Either filename or extension must be provided to generate a temporary file."
-            )
-        filename = generate_random_filename(extension, prefix=prefix)
+    temp_dir = Path(tempfile.gettempdir())
+    
+    if not filename:
+        if not extension:
+            raise ValueError("Either filename or extension must be provided to generate a temporary file.")
+        filename = generate_random_filename(extension=extension)
+    else:
+        filename_path = Path(filename)
+        # Validate that filename has an extension
+        if not filename_path.suffix:
+            if not extension:
+                raise ValueError("Filename must have an extension or extension parameter must be provided.")
+            
+            filename = f"{filename_path.stem}.{extension}"
 
-    with tempfile.NamedTemporaryFile(suffix=f".{extension}", prefix=prefix, delete=False) as tmp:
-        return Path(tmp.name).resolve()
+    temp_path = temp_dir / filename
+    
+    # Try to create the file atomically
+    try:
+        temp_path.touch(exist_ok=False)
+        return temp_path.resolve()
+    except FileExistsError:
+        if not unique:
+            raise FileExistsError(f"Temporary file '{temp_path}' already exists.")
+        
+        # Generate unique filename with counter suffix
+        base_path = Path(filename)
+        stem = base_path.stem
+        ext = base_path.suffix
+        counter = 1
+        
+        while counter < 1000:  # Safety limit
+            new_filename = f"{stem}_{counter}{ext}"
+            temp_path = temp_dir / new_filename
+            
+            try:
+                temp_path.touch(exist_ok=False)
+                return temp_path.resolve()
+            except FileExistsError:
+                counter += 1
+                continue
+        
+        raise RuntimeError(f"Failed to create unique temporary file after 1000 attempts.")

@@ -41,7 +41,3 @@ def get_environment_variables(env_vars: List[str] | str) -> Tuple:
         env_vars = [env_vars]
 
     return tuple(os.environ[env_var] for env_var in env_vars)
-
-
-# Load environment variables at module import
-load_environment_variables()

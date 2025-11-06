@@ -126,20 +126,56 @@ def retry_request(method: METHODS, url: str, max_attempts: int = 5, retry_delay:
     Attempt to make an HTTP request multiple times with a delay between attempts until successful or max attempts are exhausted.
 
     This function implements a simple retry mechanism with a fixed delay between attempts.
-    It will retry the request if it fails with a non-2xx status code or if a RequestException occurs.
+    It will retry the request if:
+    - An ExternalServiceError is raised (timeout, connection error, etc.)
+    - The response has a non-2xx status code (only if raise_for_status=True is passed in kwargs)
+    
+    Progress information is printed to stdout for each attempt, including attempt number,
+    status code, response body, and wait time between retries.
 
     Args:
         method (METHODS): The HTTP method to use (e.g., 'GET', 'POST', 'PUT', 'DELETE').
         url (str): The URL to which the request is sent.
         max_attempts (int, optional): The maximum number of attempts to make. Defaults to 5.
         retry_delay (int, optional): Time in seconds to wait between retry attempts. Defaults to 30.
-        **kwargs: Additional arguments to pass to the request function (e.g., headers, params, data).
+        **kwargs: Additional arguments to pass to the request function (e.g., headers, params, data, 
+                 raise_for_status). See request() function documentation for available options.
 
     Returns:
-        Tuple[int, Dict]: A tuple containing the HTTP status code and response body as a dictionary.
+        Tuple[int, Dict]: A tuple containing the HTTP status code and response body as a dictionary
+                         from the first successful request (2xx status code).
 
     Raises:
         ExternalServiceError: If all retry attempts fail to return a successful response (status code 2xx).
+            - REQUEST_MAX_RETRIES_EXCEEDED: Raised when max_attempts is exhausted without success.
+
+    Examples:
+        >>> # Retry GET request up to 5 times with 30 second delays
+        >>> status, body = retry_request('GET', 'https://api.example.com/data')
+        
+        >>> # Retry with custom attempts and delay
+        >>> status, body = retry_request(
+        ...     'POST',
+        ...     'https://api.example.com/process',
+        ...     max_attempts=3,
+        ...     retry_delay=10,
+        ...     request_json={'data': 'value'},
+        ...     raise_for_status=True
+        ... )
+        
+        >>> # Handle max retries exceeded
+        >>> try:
+        ...     status, body = retry_request('GET', 'https://api.example.com/unstable')
+        ... except ExternalServiceError as e:
+        ...     if e.code == "REQUEST_MAX_RETRIES_EXCEEDED":
+        ...         print(f"All retries failed: {e.message}")
+
+    Notes:
+        - Each attempt's progress is printed to stdout for debugging purposes.
+        - The function does NOT automatically retry on non-2xx status codes unless 
+          raise_for_status=True is explicitly passed in kwargs.
+        - There is no exponential backoff; the delay between retries is constant.
+        - All kwargs are passed directly to the request() function.
     """
     for attempt in range(max_attempts):
         print(f"Starting attempt {attempt + 1} of {max_attempts}")

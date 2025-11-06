@@ -9,7 +9,7 @@ from ..error.service import ExternalServiceError
 
 METHODS = Literal['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']
 
-def request(method: METHODS, url: str, params: Dict | None = None, headers: Dict | None = None, request_json: Dict | None = None, data: Dict | None = None, auth: Tuple[str, str] | None = None, timeout: int = 300, verify: bool = True, **kwargs) -> Tuple[int, Dict]:
+def request(method: METHODS, url: str, params: Dict | None = None, headers: Dict | None = None, request_json: Dict | None = None, data: Dict | None = None, auth: Tuple[str, str] | None = None, timeout: int = 300, verify: bool = True, raise_for_status: bool = False, **kwargs) -> Tuple[int, Dict]:
     """
     Make an HTTP request using the specified method to the given URL.
 
@@ -23,6 +23,7 @@ def request(method: METHODS, url: str, params: Dict | None = None, headers: Dict
         auth (Tuple[str, str] | None, optional): Authentication credentials (username, password). Defaults to None.
         timeout (int, optional): Request timeout in seconds. Defaults to 300.
         verify (bool, optional): Whether to verify SSL certificates. Defaults to True.
+        raise_for_status (bool, optional): Whether to raise an exception for non-2xx responses. Defaults to False.
         **kwargs: Additional arguments to pass to the requests method.
 
     Returns:
@@ -30,12 +31,19 @@ def request(method: METHODS, url: str, params: Dict | None = None, headers: Dict
 
     Raises:
         ValueError: If an invalid HTTP method is provided.
+        ExternalServiceError: If raise_for_status is True and the response status code is not 2xx.
     """
     if method not in METHODS.__args__:
         raise ValueError(f"Invalid HTTP method '{method}'. Must be one of: {', '.join(METHODS.__args__)}")
     
     response = requests.request(method=method, url=url, params=params, headers=headers, auth=auth, json=request_json, data=data, timeout=timeout, verify=verify, **kwargs)
     status_code = response.status_code
+    if raise_for_status and not(200 <= status_code < 300):
+        raise ExternalServiceError(
+            message=f"Request to {method} {url} failed with status code {status_code}",
+            code="HTTP_ERROR",
+        )
+
     try:
         response_body = response.json()
     except requests.exceptions.JSONDecodeError:

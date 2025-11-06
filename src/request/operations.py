@@ -205,18 +205,47 @@ def get_filename_from_uri(uri: str) -> str:
     Extract the filename from a URI.
 
     This function parses a URI, decodes any URL-encoded characters, and returns
-    the filename portion from the path component.
+    the filename portion from the path component. Handles standard HTTP(S) URIs
+    and returns empty string for non-file URIs (like data URIs).
 
     Args:
         uri (str): The URI string from which to extract the filename.
 
     Returns:
-        str: The filename extracted from the URI path.
+        str: The filename extracted from the URI path, or empty string if:
+            - The URI path ends with a slash (directory)
+            - The URI is not a file-based URI (e.g., data: scheme)
+            - The URI has no path component
 
-    Example:
+    Examples:
         >>> get_filename_from_uri("https://example.com/path/to/file.pdf")
         'file.pdf'
         >>> get_filename_from_uri("https://example.com/path/to/my%20document.pdf")
         'my document.pdf'
+        >>> get_filename_from_uri("https://example.com/files/report.pdf;jsessionid=123456")
+        'report.pdf'
+        >>> get_filename_from_uri("data:text/plain;base64,SGVsbG8gV29ybGQ=")
+        ''
+        >>> get_filename_from_uri("https://example.com/path/")
+        ''
     """
-    return Path(urllib.parse.urlsplit(urllib.parse.unquote(uri)).path).name
+    # Parse the URI first to get the scheme and path
+    parsed = urllib.parse.urlsplit(uri)
+    
+    # Handle non-file schemes (data URIs, mailto, etc.)
+    if parsed.scheme in ("data", "mailto", "tel", "javascript"):
+        return ""
+    
+    # Get the path and decode it
+    path_uri = urllib.parse.unquote(parsed.path)
+    
+    # Handle empty path or directory paths
+    if not path_uri or path_uri.endswith("/"):
+        return ""
+    
+    # Remove session IDs and parameters (semicolon-separated)
+    if ";" in path_uri:
+        path_uri = path_uri.split(";", 1)[0]
+    
+    # Extract and return the filename
+    return Path(path_uri).name

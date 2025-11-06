@@ -7,7 +7,7 @@ from time import sleep
 from ..error.service import ExternalServiceError
 
 
-METHODS = Literal['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']
+METHODS = Literal["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
 
 def request(method: METHODS, url: str, params: Dict | None = None, headers: Dict | None = None, request_json: Dict | None = None, data: Dict | None = None, auth: Tuple[str, str] | None = None, timeout: int = 300, verify: bool = True, raise_for_status: bool = False, **kwargs) -> Tuple[int, Dict]:
     """
@@ -28,10 +28,48 @@ def request(method: METHODS, url: str, params: Dict | None = None, headers: Dict
 
     Returns:
         Tuple[int, Dict]: A tuple containing the HTTP status code and response body as a dictionary.
+            - For successful JSON responses, returns the parsed JSON as a dictionary.
+            - For empty responses, returns an empty dictionary {}.
+            - For non-JSON responses, returns {"content": <decoded_text>}.
 
     Raises:
         ValueError: If an invalid HTTP method is provided.
-        ExternalServiceError: If raise_for_status is True and the response status code is not 2xx.
+        ExternalServiceError: If any of the following occurs:
+            - REQUEST_TIMEOUT: Request exceeds the specified timeout duration.
+            - CONNECTION_ERROR: Unable to establish connection to the URL.
+            - REQUEST_FAILED: General request failure (e.g., SSL errors, DNS errors).
+            - HTTP_ERROR: Response status code is not 2xx when raise_for_status=True.
+
+    Examples:
+        >>> # Simple GET request
+        >>> status, body = request('GET', 'https://api.example.com/users')
+        >>> print(f"Status: {status}, Users: {body}")
+        
+        >>> # POST request with JSON data
+        >>> status, body = request(
+        ...     'POST',
+        ...     'https://api.example.com/users',
+        ...     request_json={'name': 'John', 'email': 'john@example.com'}
+        ... )
+        
+        >>> # GET request with authentication and custom headers
+        >>> status, body = request(
+        ...     'GET',
+        ...     'https://api.example.com/protected',
+        ...     auth=('username', 'password'),
+        ...     headers={'User-Agent': 'MyApp/1.0'}
+        ... )
+        
+        >>> # Request with raise_for_status enabled
+        >>> try:
+        ...     status, body = request('GET', 'https://api.example.com/data', raise_for_status=True)
+        ... except ExternalServiceError as e:
+        ...     print(f"Request failed: {e.message}")
+
+    Notes:
+        - Non-JSON responses are automatically wrapped in a dictionary with a "content" key.
+        - SSL certificate verification is enabled by default. Disable with verify=False (not recommended for production).
+        - The function prints a warning when receiving non-JSON responses.
     """
     if method not in METHODS.__args__:
         raise ValueError(f"Invalid HTTP method '{method}'. Must be one of: {', '.join(METHODS.__args__)}")

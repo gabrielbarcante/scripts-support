@@ -39,7 +39,7 @@ def write_zip_archive(filename_zip: str, save_path: str, path_dir_files: str | N
             "Must specify one of the arguments: path_dir_files or list_files")
 
     if Path(filename_zip).suffix.lower() != '.zip':
-        filename_zip = f"{filename_zip.lstrip('.')}.zip"
+        filename_zip = f"{filename_zip.rstrip('.')}.zip"
 
     path_save_zip = Path(save_path) / filename_zip
     if path_save_zip.is_file():

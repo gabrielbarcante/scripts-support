@@ -5,36 +5,64 @@ from .operations import separate_file_extension
 from .temporary import generate_random_filename
 
 
-def escrever_lista_txt(full_path_arquivo: str | Path, lista_texto: List[Any], nova_linha: bool = True) -> Path:
+def write_list_to_txt(full_file_path: str | Path, text_list: List[Any], new_line: bool = True) -> Path:
+    """
+    Write a list of items to a text file.
 
-    if not isinstance(full_path_arquivo, Path):
-        full_path_arquivo = Path(full_path_arquivo)
+    Args:
+        full_file_path: Full path to the output file or directory. If a directory is provided,
+                       a random filename will be generated.
+        text_list: List of items to write to the file. Non-string items will be converted to strings.
+        new_line: If True, adds a newline character after each item. Defaults to True.
 
-    if full_path_arquivo.exists() and full_path_arquivo.is_file():
-        raise FileExistsError(f"O arquivo '{full_path_arquivo}' já existe.")
+    Returns:
+        Path object of the created file.
+
+    Raises:
+        FileExistsError: If the file already exists.
+        ValueError: If the file extension is not '.txt'.
+    """
+    if not isinstance(full_file_path, Path):
+        full_file_path = Path(full_file_path)
+
+    if full_file_path.exists() and full_file_path.is_file():
+        raise FileExistsError(f"The file '{full_file_path}' already exists.")
     
-    if full_path_arquivo.is_dir():
-        full_path_arquivo = full_path_arquivo / generate_random_filename(extension=".txt", method="uuid")
+    if full_file_path.is_dir():
+        full_file_path = full_file_path / generate_random_filename(extension=".txt", method="uuid")
 
-    nome, extensao = separate_file_extension(full_path_arquivo)
-    if extensao.lower() != ".txt":
-        raise ValueError("A extensão do arquivo deve ser '.txt'.")
+    name, extension = separate_file_extension(full_file_path)
+    if extension.lower() != ".txt":
+        raise ValueError("The file extension must be '.txt'.")
 
-    lista_texto = [str(item) if not isinstance(item, str) else item for item in lista_texto]
+    text_list = [str(item) if not isinstance(item, str) else item for item in text_list]
 
-    if nova_linha:
-        lista_texto = list(map(lambda x: f"{x}\n", lista_texto))
+    if new_line:
+        text_list = list(map(lambda x: f"{x}\n", text_list))
 
-    with open(full_path_arquivo, mode="w") as f:
-        f.writelines(lista_texto)
+    with open(full_file_path, mode="w") as f:
+        f.writelines(text_list)
 
-    return full_path_arquivo
+    return full_file_path
 
 
-def ler_arquivo_txt(full_path_arquivo: str | Path, encoding: str = "utf-8", criar_arquivo_nao_existe: bool = False):
+def read_txt_file(full_file_path: str | Path, encoding: str = "utf-8", create_if_not_exists: bool = False) -> str:
+    """
+    Read the contents of a text file.
 
-    modo = "a+" if criar_arquivo_nao_existe else "r"
-    with open(full_path_arquivo, mode=modo, encoding=encoding) as f:
+    Args:
+        full_file_path: Full path to the file to read.
+        encoding: Character encoding to use when reading the file. Defaults to 'utf-8'.
+        create_if_not_exists: If True, creates the file if it doesn't exist. Defaults to False.
+
+    Returns:
+        String containing the file contents.
+
+    Raises:
+        FileNotFoundError: If the file doesn't exist and create_if_not_exists is False.
+    """
+    mode = "a+" if create_if_not_exists else "r"
+    with open(full_file_path, mode=mode, encoding=encoding) as f:
         f.seek(0)
         data = f.read()
     

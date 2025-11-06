@@ -36,9 +36,9 @@ def request(method: METHODS, url: str, params: Dict | None = None, headers: Dict
         ValueError: If an invalid HTTP method is provided.
         ExternalServiceError: If any of the following occurs:
             - REQUEST_TIMEOUT: Request exceeds the specified timeout duration.
-            - CONNECTION_ERROR: Unable to establish connection to the URL.
+            - REQUEST_CONNECTION_ERROR: Unable to establish connection to the URL.
             - REQUEST_FAILED: General request failure (e.g., SSL errors, DNS errors).
-            - HTTP_ERROR: Response status code is not 2xx when raise_for_status=True.
+            - HTTP_STATUS_ERROR: Response status code is not 2xx when raise_for_status=True.
 
     Examples:
         >>> # Simple GET request
@@ -94,7 +94,7 @@ def request(method: METHODS, url: str, params: Dict | None = None, headers: Dict
     except requests.ConnectionError as e:
         raise ExternalServiceError(
             message=f"Failed to connect to {url}",
-            code="CONNECTION_ERROR"
+            code="REQUEST_CONNECTION_ERROR"
         ) from e
     except requests.RequestException as e:
         raise ExternalServiceError(
@@ -106,7 +106,7 @@ def request(method: METHODS, url: str, params: Dict | None = None, headers: Dict
     if raise_for_status and not(200 <= status_code < 300):
         raise ExternalServiceError(
             message=f"Request to {method} {url} failed with status code {status_code}",
-            code="HTTP_ERROR",
+            code="HTTP_STATUS_ERROR",
         )
 
     try:
@@ -151,7 +151,7 @@ def retry_request(method: METHODS, url: str, max_attempts: int = 5, retry_delay:
             if 200 <= status_code < 300:
                 return status_code, response_body
         
-        except (requests.RequestException, ExternalServiceError) as e:
+        except ExternalServiceError as e:
             print(f"Attempt {attempt + 1} failed with exception: {e}")
         
         if attempt < max_attempts - 1:

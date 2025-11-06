@@ -47,7 +47,7 @@ def generate_random_filename(extension: str, method: Literal["uuid", "secure", "
         random_name = "".join(secrets.choice(chars) for _ in range(length))
 
     elif method in ["timestamp", "simple"]:
-        chars = string.ascii_lowercase + string.digits
+        chars = string.ascii_letters + string.digits
         random_name = "".join(random.choices(chars, k=length))
 
         if method == "timestamp":

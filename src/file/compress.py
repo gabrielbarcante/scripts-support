@@ -7,36 +7,36 @@ import tempfile
 from ..error import InvalidFileTypeError
 
 
-def write_zip_archive(filename_zip: str, save_path: str, path_dir_arquivos: str | None = None, lista_arquivos: List[str] = []) -> Path:
+def write_zip_archive(filename_zip: str, save_path: str, path_dir_files: str | None = None, list_files: List[str] = []) -> Path:
     """
     Create a ZIP archive from a directory or list of files.
     
     Args:
         filename_zip (str): Name for the ZIP file (with or without .zip extension).
         save_path (str): Directory path where the ZIP file will be saved.
-        path_dir_arquivos (str | None): Path to directory containing files to compress. Defaults to None.
-        lista_arquivos (List[str]): List of file paths to include in the archive. Defaults to [].
+        path_dir_files (str | None): Path to directory containing files to compress. Defaults to None.
+        list_files (List[str]): List of file paths to include in the archive. Defaults to [].
         
     Returns:
         Path: Full path to the created ZIP file.
         
     Raises:
-        TypeError: If neither path_dir_arquivos nor lista_arquivos is specified.
+        TypeError: If neither path_dir_files nor list_files is specified.
         FileExistsError: If the ZIP file already exists at the destination.
-        FileNotFoundError: If any file in lista_arquivos doesn't exist.
+        FileNotFoundError: If any file in list_files doesn't exist.
         
     Examples:
-        >>> zip_path = write_zip_archive("backup.zip", "./output", path_dir_arquivos="./data")
+        >>> zip_path = write_zip_archive("backup.zip", "./output", path_dir_files="./data")
         >>> print(zip_path)
         /path/to/output/backup.zip
         
-        >>> zip_path = write_zip_archive("docs", "./output", lista_arquivos=["file1.txt", "file2.pdf"])
+        >>> zip_path = write_zip_archive("docs", "./output", list_files=["file1.txt", "file2.pdf"])
         >>> print(zip_path)
         /path/to/output/docs.zip
     """
-    if not path_dir_arquivos and not lista_arquivos:
+    if not path_dir_files and not list_files:
         raise TypeError(
-            "Must specify one of the arguments: path_dir_arquivos or lista_arquivos")
+            "Must specify one of the arguments: path_dir_files or list_files")
 
     if Path(filename_zip).suffix.lower() != '.zip':
         filename_zip = f"{filename_zip.lstrip('.')}.zip"
@@ -46,11 +46,11 @@ def write_zip_archive(filename_zip: str, save_path: str, path_dir_arquivos: str 
         raise FileExistsError(
             f"The ZIP file {path_save_zip} already exists. Choose another name or path.")
 
-    if path_dir_arquivos:
-        list_files_zip = list(Path(path_dir_arquivos).iterdir())
+    if path_dir_files:
+        list_files_zip = list(Path(path_dir_files).iterdir())
     else:
         list_files_zip = []
-        for arquivo in lista_arquivos:
+        for arquivo in list_files:
             path_arquivo = Path(arquivo)
             if not path_arquivo.is_file():
                 raise FileNotFoundError(f"File not found: {arquivo}")

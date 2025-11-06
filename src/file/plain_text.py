@@ -52,12 +52,14 @@ def read_txt_file(full_file_path: str | Path, encoding: str = "utf-8", create_if
     Read the contents of a text file.
 
     Args:
-        full_file_path: Full path to the file to read.
+        full_file_path: Full path to the file to read. Can be a string or Path object.
         encoding: Character encoding to use when reading the file. Defaults to 'utf-8'.
-        create_if_not_exists: If True, creates the file if it doesn't exist. Defaults to False.
+        create_if_not_exists: If True, creates an empty file if it doesn't exist and returns
+                             an empty string. Defaults to False.
 
     Returns:
-        String containing the file contents.
+        str: String containing the file contents. Returns an empty string if the file is empty
+             or was just created.
 
     Raises:
         FileNotFoundError: If the file doesn't exist and create_if_not_exists is False.

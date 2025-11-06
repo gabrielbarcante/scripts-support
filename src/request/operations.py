@@ -36,7 +36,34 @@ def request(method: METHODS, url: str, params: Dict | None = None, headers: Dict
     if method not in METHODS.__args__:
         raise ValueError(f"Invalid HTTP method '{method}'. Must be one of: {', '.join(METHODS.__args__)}")
     
-    response = requests.request(method=method, url=url, params=params, headers=headers, auth=auth, json=request_json, data=data, timeout=timeout, verify=verify, **kwargs)
+    try:
+        response = requests.request(method=method, 
+                                    url=url, 
+                                    params=params, 
+                                    headers=headers, 
+                                    auth=auth, 
+                                    json=request_json, 
+                                    data=data, 
+                                    timeout=timeout, 
+                                    verify=verify, 
+                                    **kwargs
+                                )
+    except requests.Timeout as e:
+        raise ExternalServiceError(
+            message=f"Request to {url} timed out after {timeout} seconds",
+            code="REQUEST_TIMEOUT"
+        ) from e
+    except requests.ConnectionError as e:
+        raise ExternalServiceError(
+            message=f"Failed to connect to {url}",
+            code="CONNECTION_ERROR"
+        ) from e
+    except requests.RequestException as e:
+        raise ExternalServiceError(
+            message=f"Request to {url} failed: {str(e)}",
+            code="REQUEST_FAILED"
+        ) from e
+    
     status_code = response.status_code
     if raise_for_status and not(200 <= status_code < 300):
         raise ExternalServiceError(
@@ -86,7 +113,7 @@ def retry_request(method: METHODS, url: str, max_attempts: int = 5, retry_delay:
             if 200 <= status_code < 300:
                 return status_code, response_body
         
-        except requests.RequestException as e:
+        except (requests.RequestException, ExternalServiceError) as e:
             print(f"Attempt {attempt + 1} failed with exception: {e}")
         
         if attempt < max_attempts - 1:

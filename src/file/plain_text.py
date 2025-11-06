@@ -5,7 +5,7 @@ from .operations import separate_file_extension
 from .temporary import generate_random_filename
 
 
-def write_list_to_txt(full_file_path: str | Path, text_list: List[Any], new_line: bool = True) -> Path:
+def write_list_to_txt(full_file_path: str | Path, text_list: List[Any], new_line: bool = True, encoding: str = "utf-8") -> Path:
     """
     Write a list of items to a text file.
 
@@ -14,9 +14,10 @@ def write_list_to_txt(full_file_path: str | Path, text_list: List[Any], new_line
                        a random filename will be generated.
         text_list: List of items to write to the file. Non-string items will be converted to strings.
         new_line: If True, adds a newline character after each item. Defaults to True.
+        encoding: Character encoding to use when writing the file. Defaults to 'utf-8'.
 
     Returns:
-        Path object of the created file.
+        Path: Path object of the created file.
 
     Raises:
         FileExistsError: If the file already exists.
@@ -40,7 +41,7 @@ def write_list_to_txt(full_file_path: str | Path, text_list: List[Any], new_line
     if new_line:
         text_list = list(map(lambda x: f"{x}\n", text_list))
 
-    with open(full_file_path, mode="w") as f:
+    with open(full_file_path, mode="w", encoding=encoding) as f:
         f.writelines(text_list)
 
     return full_file_path

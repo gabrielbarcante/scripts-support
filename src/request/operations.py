@@ -1,13 +1,14 @@
 from pathlib import Path
 import urllib.parse
 import requests
-from typing import Literal, Dict, Tuple
+from typing import Literal, Dict, Tuple, get_args
 from time import sleep
 
 from ..error.service import ExternalServiceError
 
 
 METHODS = Literal["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
+_methods_valid = get_args(METHODS)
 
 def request(method: METHODS, url: str, params: Dict | None = None, headers: Dict | None = None, request_json: Dict | None = None, data: Dict | None = None, auth: Tuple[str, str] | None = None, timeout: int = 300, verify: bool = True, raise_for_status: bool = False, **kwargs) -> Tuple[int, Dict]:
     """
@@ -71,8 +72,8 @@ def request(method: METHODS, url: str, params: Dict | None = None, headers: Dict
         - SSL certificate verification is enabled by default. Disable with verify=False (not recommended for production).
         - The function prints a warning when receiving non-JSON responses.
     """
-    if method not in METHODS.__args__:
-        raise ValueError(f"Invalid HTTP method '{method}'. Must be one of: {', '.join(METHODS.__args__)}")
+    if method not in _methods_valid:
+        raise ValueError(f"Invalid HTTP method '{method}'. Must be one of: {', '.join(_methods_valid)}")
     
     try:
         response = requests.request(method=method, 

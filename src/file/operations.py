@@ -3,13 +3,14 @@ import re
 import shutil
 from datetime import datetime
 import time
-from typing import Literal, List
+from typing import Literal, List, get_args
 from unidecode import unidecode
 
 from ..date_time import get_now
 
 
 OBJECT_TYPES = Literal["file", "directory"]
+_object_types_valid = get_args(OBJECT_TYPES)
 
 def check_object_exists(full_path: str | Path) -> bool:
     """
@@ -77,7 +78,7 @@ def delete_objects_in_directory(directory_path: str | Path, object_type: OBJECT_
     if not isinstance(directory_path, Path):
         directory_path = Path(directory_path)
 
-    valid_types = list(OBJECT_TYPES.__args__) + [None]
+    valid_types = list(_object_types_valid) + [None]
     if object_type not in valid_types:
         raise ValueError(f"Invalid object type: {object_type}. Must be: {valid_types}")
     

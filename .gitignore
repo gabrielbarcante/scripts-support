@@ -15,3 +15,7 @@ pytest-html.ini
 pytest-debug.ini
 .coverage
 coverage_relatorio_html/
+
+# logs
+logs/
+reports/

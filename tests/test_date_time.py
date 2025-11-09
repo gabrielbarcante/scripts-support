@@ -46,7 +46,7 @@ class TestGetNow:
         assert isinstance(result, datetime)
 
         now = datetime.now(pytz.timezone("America/Sao_Paulo")).replace(tzinfo=None)
-        assert abs((result - now).days - 5) == 0
+        assert abs((result - now).days - 5) < 1
     
     def test_get_now_add_days_negative(self):
         """Test get_now with negative day offset"""
@@ -54,7 +54,7 @@ class TestGetNow:
         assert isinstance(result, datetime)
 
         now = datetime.now(pytz.timezone("America/Sao_Paulo")).replace(tzinfo=None)
-        assert abs((result - now).days + 3) == 0
+        assert abs((result - now).days + 3) < 1
     
     def test_get_now_different_timezone(self):
         """Test get_now with different timezone"""

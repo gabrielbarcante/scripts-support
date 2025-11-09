@@ -9,6 +9,7 @@
     - [`src/log/`](#srclog)
     - [`src/request/`](#srcrequest)
     - [`src/date_time/`](#srcdate_time)
+    - [`src/db/`](#srcdb)
     - [`src/environment/`](#srcenvironment)
     - [`src/error/`](#srcerror)
   - [Usage Examples](#usage-examples)
@@ -17,6 +18,7 @@
     - [HTTP Requests with Retry](#http-requests-with-retry)
     - [Logging Setup](#logging-setup)
     - [Environment Variables](#environment-variables)
+    - [Database Operations](#database-operations)
   - [Testing](#testing)
   - [Licensing, Authors, Acknowledgements](#licensing-authors-acknowledgements)
 
@@ -105,6 +107,12 @@ HTTP request handling:
 Date and time utilities:
 
 - **`operations.py`**: Date/time formatting, parsing, and manipulation
+
+### `src/db/`
+
+Database connectivity and operations:
+
+- **`sqlite.py`**: Safe SQLite database interface with automatic transaction management, CRUD operations using parameterized queries, context manager support, and pandas DataFrame integration for data type conversion and timestamp handling
 
 ### `src/environment/`
 
@@ -217,6 +225,65 @@ load_environment_variables(filename=".env", file_path=".")
 api_key, db_url = get_environment_variables(["API_KEY", "DATABASE_URL"])
 ```
 
+### Database Operations
+
+```python
+from src.db.sqlite import SQLiteConnection
+from datetime import datetime
+
+# Using context manager for automatic connection management
+with SQLiteConnection('app.db', primary_key_column='id') as db:
+    # Create table
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT UNIQUE,
+            age INTEGER,
+            created_at TEXT
+        )
+    """)
+    
+    # Insert records
+    users = [
+        {'name': 'Alice', 'email': 'alice@example.com', 'age': 30},
+        {'name': 'Bob', 'email': 'bob@example.com', 'age': 25}
+    ]
+    result = db.insert('users', users)
+    
+    # Select with filters and type conversion
+    df = db.select(
+        'users',
+        filters={'age': 30},
+        order_by='name ASC',
+        dtype={'age': 'int32', 'name': 'string'}
+    )
+    
+    # Update records
+    db.update(
+        'users',
+        parameters={'age': 31},
+        filters={'name': 'Alice'}
+    )
+    
+    # Delete records
+    count = db.delete('users', filters={'email': 'bob@example.com'})
+    
+    # Work with timestamps
+    db.insert('events', [
+        {
+            'name': 'Event 1',
+            'created_at': datetime.now().isoformat()
+        }
+    ])
+    
+    # Select with date parsing
+    events = db.select(
+        'events',
+        parse_dates={'created_at': '%Y-%m-%dT%H:%M:%S'}
+    )
+```
+
 
 ## Testing<a name="testing"></a>
 
@@ -242,6 +309,7 @@ Test files in `tests/` directory:
 - `test_data_operations.py` - String matching and regex tests
 - `test_data_text.py` - Text processing tests
 - `test_date_time.py` - Date/time operations tests
+- `test_db_sqlite.py` - SQLite database operations tests (100+ test cases covering initialization, CRUD operations, transactions, timestamp handling, and dtype conversions)
 - `test_environment_loader.py` - Environment loading tests
 - `test_file_compress.py` - File compression tests
 - `test_file_plain_text.py` - Text file operations tests

@@ -264,7 +264,7 @@ class SQLiteConnection(DatabaseConnection):
             raise ValueError("All rows must have the same columns")
         
         self._connect_db(isolation_level="IMMEDIATE")
-        assert self.db_connection is not None and self.db_cursor is not None
+        assert self.db_connection is not None and self.db_cursor is not None, "Database connection is not established"
         
         try:
             first_id = None
@@ -347,7 +347,7 @@ class SQLiteConnection(DatabaseConnection):
         self._validate_identifiers(*filters.keys())
         
         self._connect_db(isolation_level="IMMEDIATE")
-        assert self.db_connection is not None and self.db_cursor is not None
+        assert self.db_connection is not None and self.db_cursor is not None, "Database connection is not established"
         
         updated_rows = []
         try:
@@ -431,7 +431,7 @@ class SQLiteConnection(DatabaseConnection):
         self._validate_identifiers(*filters.keys())
         
         self._connect_db(isolation_level="IMMEDIATE")
-        assert self.db_connection is not None and self.db_cursor is not None
+        assert self.db_connection is not None and self.db_cursor is not None, "Database connection is not established"
         
         try:
             where_clauses = []
@@ -505,7 +505,7 @@ class SQLiteConnection(DatabaseConnection):
             - Automatic rollback on error if commit=True
         """
         self._connect_db(isolation_level="IMMEDIATE" if commit else "DEFERRED")
-        assert self.db_connection is not None and self.db_cursor is not None
+        assert self.db_connection is not None and self.db_cursor is not None, "Database connection is not established"
         
         try:
             if params:

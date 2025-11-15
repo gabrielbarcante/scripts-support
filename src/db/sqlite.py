@@ -197,6 +197,7 @@ class SQLiteConnection(DatabaseConnection):
         
         try:
             self._connect_db(isolation_level="DEFERRED")
+            assert self.db_connection is not None, "Database connection is not established"
             df = pd.read_sql(query, self.db_connection, params=params, dtype=dtype, parse_dates=parse_dates)
             
             if localize_timezone and parse_dates and not df.empty:
@@ -548,6 +549,7 @@ class SQLiteConnection(DatabaseConnection):
         try:
             self._connect_db(isolation_level="DEFERRED")
             query = f"PRAGMA table_info({table_name})"
+            assert self.db_connection is not None, "Database connection is not established"
             return pd.read_sql(query, self.db_connection)
         except Exception as e:
             raise DatabaseError(message=f"Error getting table info for '{table_name}'", code="TABLE_INFO_ERROR") from e

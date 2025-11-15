@@ -201,11 +201,10 @@ class SQLiteConnection(DatabaseConnection):
             df = pd.read_sql(query, self.db_connection, params=params, dtype=dtype, parse_dates=parse_dates)
             
             if localize_timezone and parse_dates and not df.empty:
-                for column in parse_dates.keys():
-                    if column in df.columns:
-                        df[column] = df[column].dt.tz_localize(localize_timezone)
+                df = self.adjust_datetime_timezone(df, localize_timezone, list(parse_dates.keys()))
             
             return df
+        
         except Exception as e:
             raise DatabaseError(message=f"Error executing SELECT on '{table_name}'", code="SELECT_ERROR") from e
 

@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import timezone
 from typing import Dict, Tuple, List, Any
 import re
+import pandas as pd
 
 
 class DatabaseConnection(ABC):
@@ -276,3 +277,22 @@ class DatabaseConnection(ABC):
             DatabaseError: If query fails
         """
         pass
+
+    @staticmethod
+    def adjust_datetime_timezone(df: pd.DataFrame, tz: timezone, dt_columns: list[str]) -> pd.DataFrame:
+        """
+        Adjust datetime columns in DataFrame to specified timezone.
+        
+        Args:
+            df: DataFrame containing datetime columns
+            tz: Timezone to localize to
+            dt_columns: List of datetime column names to localize
+        
+        Returns:
+            DataFrame with localized datetime columns
+        """
+        for column in dt_columns:
+            if column in df.columns:
+                df[column] = df[column].dt.tz_localize(tz)
+        
+        return df

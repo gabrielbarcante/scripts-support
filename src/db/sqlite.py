@@ -3,13 +3,13 @@ import sqlite3
 import pandas as pd
 from datetime import timezone
 from typing import Literal, Dict, Tuple, List, TypeAlias, Any
-import re
 
 from ..error import DatabaseError
+from .base import DatabaseConnection
 
 ISOLATION_LEVEL: TypeAlias = Literal["DEFERRED", "IMMEDIATE", "EXCLUSIVE", None]
 
-class SQLiteConnection:
+class SQLiteConnection(DatabaseConnection):
     """
     Safe interface for SQLite database operations with automatic transaction management.
     
@@ -32,8 +32,6 @@ class SQLiteConnection:
         ...     df = db.select('users', filters={'name': 'John'})
     """
     
-    _IDENTIFIER_PATTERN = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
-    
     def __init__(self, db_path: str, primary_key_column: str | None = None):
         """
         Initialize database connection interface.
@@ -45,36 +43,17 @@ class SQLiteConnection:
         Raises:
             ValueError: If primary_key_column contains invalid characters
         """
+        super().__init__(primary_key_column)
         self.db_path = Path(db_path)
         self.db_connection: sqlite3.Connection | None = None
         self.db_cursor: sqlite3.Cursor | None = None
-        
-        if primary_key_column and not self._is_valid_identifier(primary_key_column):
-            raise ValueError(f"Invalid primary key column name: {primary_key_column}")
-        self.primary_key_column = primary_key_column
 
-    def __enter__(self):
-        """Enter context manager - establish database connection."""
-        self._connect_db()
-        return self
+    def _rollback(self) -> None:
+        """Rollback current transaction."""
+        if self.db_connection:
+            self.db_connection.rollback()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Exit context manager - close connection and rollback on error."""
-        if exc_type is not None:
-            if self.db_connection:
-                self.db_connection.rollback()
-        self._disconnect_db()
-        return False
-
-    def __del__(self):
-        """Destructor - ensure connection is closed."""
-        self._disconnect_db()
-
-    def _connect_db(
-        self, 
-        timeout: int = 10, 
-        isolation_level: ISOLATION_LEVEL = "DEFERRED"
-    ) -> tuple[sqlite3.Connection, sqlite3.Cursor]:
+    def _connect_db(self, timeout: int = 10, isolation_level: ISOLATION_LEVEL = "DEFERRED", **kwargs) -> tuple[sqlite3.Connection, sqlite3.Cursor]:
         """
         Establish connection to SQLite database.
         
@@ -120,7 +99,7 @@ class SQLiteConnection:
 
     def _disconnect_db(self) -> None:
         """Close database connection safely."""
-        if self.db_connection is not None:
+        if "db_connection" in self.__dict__ and self.db_connection is not None:
             try:
                 self.db_connection.close()
             except Exception:
@@ -128,33 +107,6 @@ class SQLiteConnection:
             finally:
                 self.db_connection = None
                 self.db_cursor = None
-
-    @staticmethod
-    def _is_valid_identifier(identifier: str) -> bool:
-        """
-        Validate SQL identifier to prevent injection attacks.
-        
-        Args:
-            identifier: Table or column name to validate
-        
-        Returns:
-            True if valid (alphanumeric and underscore only, starts with letter/underscore)
-        """
-        return bool(SQLiteConnection._IDENTIFIER_PATTERN.match(identifier))
-    
-    def _validate_identifiers(self, *identifiers: str) -> None:
-        """
-        Validate multiple SQL identifiers.
-        
-        Args:
-            *identifiers: Table/column names to validate
-        
-        Raises:
-            ValueError: If any identifier is invalid
-        """
-        for identifier in identifiers:
-            if not self._is_valid_identifier(identifier):
-                raise ValueError(f"Invalid SQL identifier: '{identifier}'. Only alphanumeric characters and underscores allowed.")
     
     def is_connected(self) -> bool:
         """

@@ -152,7 +152,8 @@ class DatabaseConnection(ABC):
         rows: list[Dict[str, Any]], 
         return_inserted: bool = True, 
         dtype: Dict | None = None, 
-        parse_dates: Dict | None = None
+        parse_dates: Dict | None = None, 
+        localize_timezone: timezone | None = None
     ) -> pd.DataFrame | None:
         """
         Insert one or more rows into table.
@@ -163,6 +164,7 @@ class DatabaseConnection(ABC):
             return_inserted: Whether to return inserted records (requires primary_key_column)
             dtype: Pandas dtype mapping for returned DataFrame
             parse_dates: Date columns to parse in returned DataFrame
+            localize_timezone: Timezone for datetime localization in returned DataFrame
         
         Returns:
             DataFrame with inserted records if return_inserted=True, else None
@@ -181,7 +183,8 @@ class DatabaseConnection(ABC):
         filters: Dict[str, Any], 
         return_updated_rows: bool = True,
         dtype: Dict | None = None, 
-        parse_dates: Dict | None = None
+        parse_dates: Dict | None = None, 
+        localize_timezone: timezone | None = None
     ) -> pd.DataFrame | None:
         """
         Update records in table matching filter criteria.
@@ -193,6 +196,7 @@ class DatabaseConnection(ABC):
             return_updated_rows: Whether to return updated records
             dtype: Pandas dtype mapping for returned DataFrame
             parse_dates: Date columns to parse in returned DataFrame
+            localize_timezone: Timezone for datetime localization in returned DataFrame
         
         Returns:
             DataFrame with updated records if return_updated_rows=True, else None

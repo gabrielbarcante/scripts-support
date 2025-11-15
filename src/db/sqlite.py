@@ -214,7 +214,8 @@ class SQLiteConnection(DatabaseConnection):
         rows: list[Dict[str, Any]], 
         return_inserted: bool = True, 
         dtype: Dict | None = None, 
-        parse_dates: Dict | None = None
+        parse_dates: Dict | None = None, 
+        localize_timezone: timezone | None = None
     ) -> pd.DataFrame | None:
         """
         Insert one or more rows into table.
@@ -225,6 +226,7 @@ class SQLiteConnection(DatabaseConnection):
             return_inserted: Whether to return inserted records (requires primary_key_column)
             dtype: Pandas dtype mapping for returned DataFrame
             parse_dates: Date columns to parse in returned DataFrame
+            localize_timezone: Timezone for datetime localization in returned DataFrame
         
         Returns:
             DataFrame with inserted records if return_inserted=True, else None
@@ -288,7 +290,10 @@ class SQLiteConnection(DatabaseConnection):
                 
                 placeholders_ids = ','.join(['?' for _ in inserted_ids])
                 query = f"SELECT * FROM {table_name} WHERE {self.primary_key_column} IN ({placeholders_ids})"
-                return pd.read_sql(query, self.db_connection, params=tuple(inserted_ids), dtype=dtype, parse_dates=parse_dates)
+                df = pd.read_sql(query, self.db_connection, params=tuple(inserted_ids), dtype=dtype, parse_dates=parse_dates)
+                if localize_timezone and parse_dates and not df.empty:
+                    df = self.adjust_datetime_timezone(df, localize_timezone, list(parse_dates.keys()))
+                return df
             
             return None
             
@@ -303,7 +308,8 @@ class SQLiteConnection(DatabaseConnection):
         filters: Dict[str, Any], 
         return_updated_rows: bool = True,
         dtype: Dict | None = None, 
-        parse_dates: Dict | None = None
+        parse_dates: Dict | None = None, 
+        localize_timezone: timezone | None = None
     ) -> pd.DataFrame | None:
         """
         Update records in table matching filter criteria.
@@ -315,6 +321,7 @@ class SQLiteConnection(DatabaseConnection):
             return_updated_rows: Whether to return updated records
             dtype: Pandas dtype mapping for returned DataFrame
             parse_dates: Date columns to parse in returned DataFrame
+            localize_timezone: Timezone for datetime localization in returned DataFrame
         
         Returns:
             DataFrame with updated records if return_updated_rows=True, else None
@@ -382,6 +389,8 @@ class SQLiteConnection(DatabaseConnection):
                 if parse_dates:
                     for col, fmt in parse_dates.items():
                         updated_rows[col] = pd.to_datetime(updated_rows[col], format=fmt, errors="coerce")
+                if localize_timezone and parse_dates and not updated_rows.empty:
+                    updated_rows = self.adjust_datetime_timezone(updated_rows, localize_timezone, list(parse_dates.keys()))
                 return updated_rows
 
             return None if not return_updated_rows else pd.DataFrame()

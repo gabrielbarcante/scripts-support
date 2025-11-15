@@ -30,9 +30,6 @@ class DatabaseConnection(ABC):
         Raises:
             ValueError: If primary_key_column contains invalid characters
         """
-        self.db_connection: Any = None
-        self.db_cursor: Any = None
-
         if primary_key_column and not self._is_valid_identifier(primary_key_column):
             raise ValueError(f"Invalid primary key column name: {primary_key_column}")
         self.primary_key_column = primary_key_column
@@ -45,8 +42,7 @@ class DatabaseConnection(ABC):
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Exit context manager - close connection and rollback on error."""
         if exc_type is not None:
-            if self.db_connection:
-                self._rollback()
+            self._rollback()
         self._disconnect_db()
         return False
 
@@ -55,7 +51,7 @@ class DatabaseConnection(ABC):
         self._disconnect_db()
 
     @abstractmethod
-    def _connect_db(self, **kwargs) -> tuple[Any, Any]:
+    def _connect_db(self, **kwargs) -> Any:
         """
         Establish connection to database.
         

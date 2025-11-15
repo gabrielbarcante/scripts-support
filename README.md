@@ -110,9 +110,11 @@ Date and time utilities:
 
 ### `src/db/`
 
-Database connectivity and operations:
+Database connectivity and operations with extensible architecture:
 
-- **`sqlite.py`**: Safe SQLite database interface with automatic transaction management, CRUD operations using parameterized queries, context manager support, and pandas DataFrame integration for data type conversion and timestamp handling
+- **`base.py`**: Abstract base class defining the database connection interface with SQL identifier validation, context manager support, and standardized CRUD operations
+- **`sqlite.py`**: SQLite implementation with safe parameterized queries, automatic transaction management, pandas DataFrame integration, and support for timestamp handling and dtype conversions
+- **`factory.py`**: Factory pattern for creating database connections with support for multiple database types, extensible design for custom connectors, and centralized connection management
 
 ### `src/environment/`
 
@@ -228,11 +230,10 @@ api_key, db_url = get_environment_variables(["API_KEY", "DATABASE_URL"])
 ### Database Operations
 
 ```python
-from src.db.sqlite import SQLiteConnection
-from datetime import datetime
+from src.db import create_connection, DatabaseFactory
 
-# Using context manager for automatic connection management
-with SQLiteConnection('app.db', primary_key_column='id') as db:
+# Method 1: Use convenience function
+with create_connection("sqlite", db_path="app.db", primary_key_column="id") as db:
     # Create table
     db.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -260,7 +261,7 @@ with SQLiteConnection('app.db', primary_key_column='id') as db:
     )
     
     # Update records
-    db.update(
+    updated = db.update(
         'users',
         parameters={'age': 31},
         filters={'name': 'Alice'}
@@ -268,20 +269,50 @@ with SQLiteConnection('app.db', primary_key_column='id') as db:
     
     # Delete records
     count = db.delete('users', filters={'email': 'bob@example.com'})
+
+# Method 2: Use factory directly
+db = DatabaseFactory.create_connection(
+    db_type="sqlite",
+    db_path="data.db",
+    primary_key_column="id"
+)
+
+with db:
+    # Check if table exists
+    if not db.table_exists('logs'):
+        db.execute("CREATE TABLE logs (id INTEGER PRIMARY KEY, message TEXT)")
+    
+    # Get table schema
+    schema = db.get_table_info('logs')
+    print(schema[['name', 'type', 'notnull']])
     
     # Work with timestamps
-    db.insert('events', [
+    from datetime import datetime
+    db.insert('logs', [
         {
-            'name': 'Event 1',
+            'message': 'Application started',
             'created_at': datetime.now().isoformat()
         }
     ])
     
     # Select with date parsing
-    events = db.select(
-        'events',
+    logs = db.select(
+        'logs',
         parse_dates={'created_at': '%Y-%m-%dT%H:%M:%S'}
     )
+
+# Method 3: Register custom database connector
+from src.db import DatabaseConnection, DatabaseFactory
+
+class CustomDBConnection(DatabaseConnection):
+    # Implement abstract methods
+    def _connect_db(self, **kwargs):
+        # Custom connection logic
+        pass
+    # ...other implementations...
+
+DatabaseFactory.register_connector("customdb", CustomDBConnection)
+db = create_connection("customdb", custom_param="value")
 ```
 
 
@@ -309,7 +340,8 @@ Test files in `tests/` directory:
 - `test_data_operations.py` - String matching and regex tests
 - `test_data_text.py` - Text processing tests
 - `test_date_time.py` - Date/time operations tests
-- `test_db_sqlite.py` - SQLite database operations tests (100+ test cases covering initialization, CRUD operations, transactions, timestamp handling, and dtype conversions)
+- `test_db_sqlite.py` - SQLite database operations tests (100+ test cases covering initialization, CRUD operations, transactions, timestamp handling, dtype conversions, and context manager)
+- `test_db_factory.py` - Database factory pattern tests (covering connection creation, connector registration, type validation, and extensibility)
 - `test_environment_loader.py` - Environment loading tests
 - `test_file_compress.py` - File compression tests
 - `test_file_plain_text.py` - Text file operations tests

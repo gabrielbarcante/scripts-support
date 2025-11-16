@@ -1,6 +1,7 @@
 from typing import Literal, Dict, Any
 from .base import DatabaseConnection
 from .sqlite import SQLiteConnection
+from .mysql import MySQLConnection
 
 
 DatabaseType = Literal["sqlite", "mysql"]
@@ -32,7 +33,7 @@ class DatabaseFactory:
     
     _CONNECTORS: Dict[str, type[DatabaseConnection]] = {
         "sqlite": SQLiteConnection,
-        # "mysql": MySQLConnection
+        "mysql": MySQLConnection
     }
     
     @classmethod

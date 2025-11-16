@@ -574,6 +574,7 @@ class SQLiteConnection(DatabaseConnection):
         
         Raises:
             ValueError: If table_name invalid
+            DatabaseError: If the check query fails
         
         Example:
             >>> if db.table_exists('users'):
@@ -583,11 +584,13 @@ class SQLiteConnection(DatabaseConnection):
         """
         self._validate_identifiers(table_name)
         
-        self._connect_db(isolation_level="DEFERRED")
-        cursor = self.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
-            params=(table_name,),
-            commit=False
-        )
-        return cursor.fetchone() is not None
-
+        try:
+            self._connect_db(isolation_level="DEFERRED")
+            cursor = self.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+                params=(table_name,),
+                commit=False
+            )
+            return cursor.fetchone() is not None
+        except Exception as e:
+            raise DatabaseError(message=f"Error checking if table '{table_name}' exists", code="TABLE_EXISTS_ERROR") from e

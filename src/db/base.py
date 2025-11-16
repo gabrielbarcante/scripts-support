@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import pandas as pd
 from datetime import timezone
-from typing import Dict, Tuple, List, Any
+from typing import Dict, Any
 import re
 import pandas as pd
 
@@ -355,6 +355,9 @@ class DatabaseConnection(ABC):
         """
         for column in dt_columns:
             if column in df.columns:
-                df[column] = df[column].dt.tz_localize(tz)
+                if df[column].dt.tz is None:
+                    df[column] = df[column].dt.tz_localize(tz)
+                else:
+                    df[column] = df[column].dt.tz_convert(tz)
         
         return df

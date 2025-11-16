@@ -13,10 +13,20 @@ class DatabaseConnection(ABC):
     Defines the interface that all database connectors must implement.
     Supports context manager pattern for automatic resource management.
     
+    This class cannot be instantiated directly. Subclasses must implement
+    all abstract methods to provide database-specific functionality.
+    
     Attributes:
-        db_connection: Active database connection object
-        db_cursor: Active database cursor object
         primary_key_column (str | None): Primary key column name for insert operations
+    
+    Example:
+        >>> class MyDBConnection(DatabaseConnection):
+        ...     def _connect_db(self, **kwargs): ...
+        ...     def _disconnect_db(self): ...
+        ...     # ... implement other abstract methods
+        >>> 
+        >>> with MyDBConnection('id') as db:
+        ...     df = db.select('users', filters={'active': 1})
     """
     
     _IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
@@ -56,8 +66,14 @@ class DatabaseConnection(ABC):
         """
         Establish connection to database.
         
+        Subclasses must implement this method to create and return
+        database-specific connection objects.
+        
+        Args:
+            **kwargs: Database-specific connection parameters
+        
         Returns:
-            Tuple of (connection, cursor) objects
+            Database connection object(s) (implementation-specific)
         
         Raises:
             DatabaseError: If connection fails
@@ -66,12 +82,23 @@ class DatabaseConnection(ABC):
 
     @abstractmethod
     def _disconnect_db(self) -> None:
-        """Close database connection safely."""
+        """
+        Close database connection safely.
+        
+        Subclasses must implement this method to properly clean up
+        and close database connections. Should handle cases where
+        connection is already closed or None.
+        """
         pass
 
     @abstractmethod
     def _rollback(self) -> None:
-        """Rollback current transaction."""
+        """
+        Rollback current transaction.
+        
+        Subclasses must implement this method to rollback any pending
+        transactions. Called automatically on error in context manager.
+        """
         pass
 
     @staticmethod
@@ -106,8 +133,11 @@ class DatabaseConnection(ABC):
         """
         Check if database connection is active.
         
+        Subclasses must implement this method to verify the connection
+        is established and responsive.
+        
         Returns:
-            True if connected and responsive
+            True if connected and responsive, False otherwise
         """
         pass
 
@@ -126,6 +156,9 @@ class DatabaseConnection(ABC):
         """
         Query records from table with optional filtering and ordering.
         
+        Subclasses must implement this method using parameterized queries
+        to prevent SQL injection attacks.
+        
         Args:
             table_name: Table to query
             columns: Columns to select (default: all columns)
@@ -137,7 +170,7 @@ class DatabaseConnection(ABC):
             localize_timezone: Timezone for datetime localization
         
         Returns:
-            DataFrame with query results (empty if no matches)
+            DataFrame with query results (empty DataFrame if no matches)
         
         Raises:
             ValueError: If table_name or column names are invalid
@@ -157,6 +190,9 @@ class DatabaseConnection(ABC):
     ) -> pd.DataFrame | None:
         """
         Insert one or more rows into table.
+        
+        Subclasses must implement this method with automatic transaction
+        management (commit on success, rollback on error).
         
         Args:
             table_name: Table to insert into
@@ -189,6 +225,9 @@ class DatabaseConnection(ABC):
         """
         Update records in table matching filter criteria.
         
+        Subclasses must implement this method with automatic transaction
+        management (commit on success, rollback on error).
+        
         Args:
             table_name: Table to update
             parameters: Values to update {column: new_value}. Use None for NULL
@@ -212,6 +251,10 @@ class DatabaseConnection(ABC):
         """
         Delete records from table matching filter criteria.
         
+        Subclasses must implement this method with automatic transaction
+        management (commit on success, rollback on error). Must enforce
+        non-empty filters to prevent accidental full table deletion.
+        
         Args:
             table_name: Table to delete from
             filters: WHERE conditions {column: value}. Use None for IS NULL.
@@ -230,22 +273,29 @@ class DatabaseConnection(ABC):
     def execute(
         self, 
         sql: str, 
-        params: Tuple | List | None = None, 
+        params: Any | None = None, 
         commit: bool = True
     ) -> Any:
         """
         Execute custom SQL query with parameters.
         
+        Subclasses must implement this method for executing arbitrary SQL.
+        Should use parameterized queries when params are provided.
+        
         Args:
-            sql: SQL query with placeholders for parameters
+            sql: SQL query with database-specific placeholders for parameters
             params: Query parameters (tuple or list)
             commit: Whether to commit automatically after execution
         
         Returns:
-            Cursor with query results
+            Database-specific result object (cursor, DataFrame, etc.)
         
         Raises:
             DatabaseError: If query execution fails
+        
+        Warning:
+            This method bypasses identifier validation. Use with caution
+            and always use parameterized queries for user input.
         """
         pass
 
@@ -254,14 +304,18 @@ class DatabaseConnection(ABC):
         """
         Check if table exists in database.
         
+        Subclasses must implement this method using database-specific
+        metadata queries.
+        
         Args:
             table_name: Table name to check
         
         Returns:
-            True if table exists
+            True if table exists, False otherwise
         
         Raises:
             ValueError: If table_name invalid
+            DatabaseError: If metadata query fails
         """
         pass
 
@@ -270,15 +324,19 @@ class DatabaseConnection(ABC):
         """
         Get table schema information.
         
+        Subclasses must implement this method to query database metadata
+        and return column information (names, types, constraints, etc.).
+        
         Args:
             table_name: Table to inspect
         
         Returns:
-            DataFrame with table schema information
+            DataFrame with table schema information (columns: name, type, 
+            notnull, dflt_value, pk, etc.)
         
         Raises:
             ValueError: If table_name invalid
-            DatabaseError: If query fails
+            DatabaseError: If metadata query fails
         """
         pass
 

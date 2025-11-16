@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from src.db import DatabaseFactory, create_connection, DatabaseConnection, SQLiteConnection
+from src.db import DatabaseFactory, create_connection, DatabaseConnection, SQLiteConnection, MySQLConnection
 from src.error import DatabaseError
 
 
@@ -12,6 +12,7 @@ class TestDatabaseFactory:
         types = DatabaseFactory.get_supported_types()
         assert isinstance(types, list)
         assert "sqlite" in types
+        assert "mysql" in types
     
     def test_is_supported(self):
         """Test checking if database type is supported."""
@@ -33,6 +34,28 @@ class TestDatabaseFactory:
         assert isinstance(db, DatabaseConnection)
         assert db.primary_key_column == "id"
         assert db.db_path == db_path
+
+    def test_create_mysql_connection(self):
+        """Test creating MySQL connection through factory."""
+
+        db = DatabaseFactory.create_connection(
+            db_type="mysql",
+            host="localhost",
+            port=3306,
+            user="test_user",
+            password="test_pass",
+            database="test_db",
+            primary_key_column="id"
+        )
+        
+        assert isinstance(db, MySQLConnection)
+        assert isinstance(db, DatabaseConnection)
+        assert db.host == "localhost"
+        assert db.port == 3306
+        assert db.user == "test_user"
+        assert db.password == "test_pass"
+        assert db.database == "test_db"
+        assert db.primary_key_column == "id"
 
     def test_create_connection_unsupported_type(self):
         """Test creating connection with unsupported database type."""

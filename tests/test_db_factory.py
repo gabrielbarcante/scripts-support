@@ -74,10 +74,10 @@ class TestDatabaseFactory:
             def select(self, table_name, columns=None, filters=None, order_by=None, limit=None, dtype=None, parse_dates=None, localize_timezone=None):
                 return pd.DataFrame()
             
-            def insert(self, table_name, rows, return_inserted=True, dtype=None, parse_dates=None):
+            def insert(self, table_name, rows, return_inserted=True, dtype=None, parse_dates=None, localize_timezone=None):
                 return None
             
-            def update(self, table_name, parameters, filters, return_updated_rows=True, dtype=None, parse_dates=None):
+            def update(self, table_name, parameters, filters, return_updated_rows=True, dtype=None, parse_dates=None, localize_timezone=None):
                 return None
             
             def delete(self, table_name, filters):

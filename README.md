@@ -19,6 +19,8 @@
     - [Logging Setup](#logging-setup)
     - [Environment Variables](#environment-variables)
     - [Database Operations](#database-operations)
+    - [Direct SQLiteConnection Usage](#direct-sqliteconnection-usage)
+    - [Direct MySQLConnection Usage](#direct-mysqlconnection-usage)
   - [Testing](#testing)
   - [Licensing, Authors, Acknowledgements](#licensing-authors-acknowledgements)
 
@@ -114,6 +116,7 @@ Database connectivity and operations with extensible architecture:
 
 - **`base.py`**: Abstract base class defining the database connection interface with SQL identifier validation, context manager support, and standardized CRUD operations
 - **`sqlite.py`**: SQLite implementation with safe parameterized queries, automatic transaction management, pandas DataFrame integration, and support for timestamp handling and dtype conversions
+- **`mysql.py`**: MySQL implementation using SQLAlchemy with connection pooling, safe parameterized queries, batch insert operations, automatic transaction management, pandas DataFrame integration, and support for timezone handling
 - **`factory.py`**: Factory pattern for creating database connections with support for multiple database types, extensible design for custom connectors, and centralized connection management
 
 ### `src/environment/`
@@ -232,7 +235,7 @@ api_key, db_url = get_environment_variables(["API_KEY", "DATABASE_URL"])
 ```python
 from src.db import create_connection, DatabaseFactory
 
-# Method 1: Use convenience function
+# Method 1: Use convenience function with SQLite
 with create_connection("sqlite", db_path="app.db", primary_key_column="id") as db:
     # Create table
     db.execute("""
@@ -270,38 +273,101 @@ with create_connection("sqlite", db_path="app.db", primary_key_column="id") as d
     # Delete records
     count = db.delete('users', filters={'email': 'bob@example.com'})
 
-# Method 2: Use factory directly
-db = DatabaseFactory.create_connection(
-    db_type="sqlite",
-    db_path="data.db",
+# Method 2: Use MySQL connection
+db = create_connection(
+    db_type="mysql",
+    host="localhost",
+    port=3306,
+    user="myuser",
+    password="mypassword",
+    database="mydb",
     primary_key_column="id"
+)
+
+with db:
+    # Create table with MySQL-specific syntax
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS products (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            price DECIMAL(10, 2),
+            stock INT DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
+    # Batch insert with automatic ID tracking
+    products = [
+        {'name': 'Laptop', 'price': 999.99, 'stock': 10},
+        {'name': 'Mouse', 'price': 29.99, 'stock': 50},
+        {'name': 'Keyboard', 'price': 79.99, 'stock': 30}
+    ]
+    inserted = db.insert('products', products, return_inserted=True)
+    print(f"Inserted {len(inserted)} products")
+    
+    # Complex filtering with multiple conditions
+    low_stock = db.select(
+        'products',
+        filters={'stock': 10},
+        order_by='price DESC'
+    )
+    
+    # Update with NULL filter
+    db.update(
+        'products',
+        parameters={'stock': 0},
+        filters={'discontinued_at': None}
+    )
+    
+    # Get table schema information
+    schema = db.get_table_info('products')
+    print(schema[['name', 'type', 'notnull', 'pk']])
+
+# Method 3: Use factory directly
+db = DatabaseFactory.create_connection(
+    db_type="mysql",
+    host="localhost",
+    port=3306,
+    user="root",
+    password="password",
+    database="analytics"
 )
 
 with db:
     # Check if table exists
     if not db.table_exists('logs'):
-        db.execute("CREATE TABLE logs (id INTEGER PRIMARY KEY, message TEXT)")
+        db.execute("""
+            CREATE TABLE logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                message TEXT,
+                level VARCHAR(20),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
     
-    # Get table schema
-    schema = db.get_table_info('logs')
-    print(schema[['name', 'type', 'notnull']])
+    # Work with timestamps and timezone localization
+    from datetime import datetime, timezone
+    import pytz
     
-    # Work with timestamps
-    from datetime import datetime
-    db.insert('logs', [
+    logs = [
         {
             'message': 'Application started',
-            'created_at': datetime.now().isoformat()
+            'level': 'INFO',
+            'created_at': datetime.now(timezone.utc).isoformat()
         }
-    ])
+    ]
+    db.insert('logs', logs)
     
-    # Select with date parsing
-    logs = db.select(
+    # Select with date parsing and timezone conversion
+    recent_logs = db.select(
         'logs',
-        parse_dates={'created_at': '%Y-%m-%dT%H:%M:%S'}
+        filters={'level': 'ERROR'},
+        parse_dates={'created_at': '%Y-%m-%dT%H:%M:%S%z'},
+        localize_timezone=pytz.timezone('America/Sao_Paulo'),
+        limit=100
     )
 
-# Method 3: Register custom database connector
+# Method 4: Register custom database connector
 from src.db import DatabaseConnection, DatabaseFactory
 
 class CustomDBConnection(DatabaseConnection):
@@ -313,6 +379,207 @@ class CustomDBConnection(DatabaseConnection):
 
 DatabaseFactory.register_connector("customdb", CustomDBConnection)
 db = create_connection("customdb", custom_param="value")
+```
+
+### Direct SQLiteConnection Usage
+
+```python
+from src.db.sqlite import SQLiteConnection
+from pathlib import Path
+
+# Initialize SQLite connection
+db = SQLiteConnection(
+    db_path="data/app.db",
+    primary_key_column="id"
+)
+
+# Use as context manager for automatic connection handling
+with db:
+    # Create table
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            status TEXT DEFAULT 'pending',
+            created_at TEXT,
+            updated_at TEXT
+        )
+    """)
+    
+    # Insert tasks
+    tasks = [
+        {
+            'title': 'Complete project',
+            'description': 'Finish the database module',
+            'status': 'in_progress'
+        },
+        {
+            'title': 'Write tests',
+            'description': 'Add test coverage for new features',
+            'status': 'pending'
+        }
+    ]
+    
+    # Insert with automatic ID retrieval
+    inserted = db.insert('tasks', tasks, return_inserted=True)
+    print(f"Inserted {len(inserted)} tasks with IDs: {inserted['id'].tolist()}")
+    
+    # Query with filtering and ordering
+    pending_tasks = db.select(
+        'tasks',
+        columns=['id', 'title', 'status'],
+        filters={'status': 'pending'},
+        order_by='created_at DESC'
+    )
+    
+    # Update task status
+    db.update(
+        'tasks',
+        parameters={'status': 'completed', 'updated_at': datetime.now().isoformat()},
+        filters={'id': inserted['id'].iloc[0]},
+        return_updated_rows=False
+    )
+    
+    # Delete completed tasks
+    deleted_count = db.delete('tasks', filters={'status': 'completed'})
+    print(f"Deleted {deleted_count} completed tasks")
+    
+    # Check table structure
+    if db.table_exists('tasks'):
+        schema = db.get_table_info('tasks')
+        print("Table schema:")
+        print(schema[['name', 'type', 'notnull', 'dflt_value']])
+
+# Connection automatically closed after context manager exits
+assert not db.is_connected()
+
+# Manual connection management (not recommended)
+db.connect()
+try:
+    result = db.select('tasks')
+finally:
+    db.disconnect()
+```
+
+### Direct MySQLConnection Usage
+
+```python
+from src.db.mysql import MySQLConnection
+from datetime import datetime, timezone
+import pytz
+
+# Initialize MySQL connection
+db = MySQLConnection(
+    host="localhost",
+    port=3306,
+    user="app_user",
+    password="secure_password",
+    database="application_db",
+    primary_key_column="id"
+)
+
+# Use context manager for transaction safety
+with db:
+    # Create orders table
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS orders (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            customer_name VARCHAR(255) NOT NULL,
+            total_amount DECIMAL(10, 2) NOT NULL,
+            status VARCHAR(50) DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_status (status),
+            INDEX idx_created_at (created_at)
+        )
+    """)
+    
+    # Batch insert orders
+    orders = [
+        {'customer_name': 'John Doe', 'total_amount': 150.50, 'status': 'pending'},
+        {'customer_name': 'Jane Smith', 'total_amount': 89.99, 'status': 'pending'},
+        {'customer_name': 'Bob Johnson', 'total_amount': 320.00, 'status': 'processing'}
+    ]
+    
+    # Insert and retrieve inserted records
+    inserted_orders = db.insert('orders', orders, return_inserted=True)
+    print(f"Inserted {len(inserted_orders)} orders")
+    
+    # Query with complex filtering
+    high_value_orders = db.select(
+        'orders',
+        filters={'status': 'pending'},
+        order_by='total_amount DESC',
+        limit=10,
+        dtype={'total_amount': 'float64'}
+    )
+    
+    # Update order status
+    db.update(
+        'orders',
+        parameters={'status': 'shipped'},
+        filters={'id': inserted_orders['id'].iloc[0]},
+        return_updated_rows=True
+    )
+    
+    # Query with date parsing and timezone conversion
+    recent_orders = db.select(
+        'orders',
+        parse_dates={'created_at': '%Y-%m-%d %H:%M:%S'},
+        localize_timezone=pytz.timezone('America/Sao_Paulo'),
+        order_by='created_at DESC',
+        limit=50
+    )
+    
+    # Delete cancelled orders
+    deleted = db.delete('orders', filters={'status': 'cancelled'})
+    print(f"Deleted {deleted} cancelled orders")
+    
+    # Get table schema information
+    if db.table_exists('orders'):
+        info = db.get_table_info('orders')
+        print("\nOrders table structure:")
+        print(info[['name', 'type', 'notnull', 'pk']])
+    
+    # Execute custom query with parameters
+    result = db.execute(
+        """
+        UPDATE orders 
+        SET status = :new_status 
+        WHERE total_amount > :min_amount 
+        AND status = :old_status
+        """,
+        params={
+            'new_status': 'priority',
+            'min_amount': 200.00,
+            'old_status': 'pending'
+        },
+        commit=True
+    )
+    print(f"Updated {result.rowcount} orders to priority status")
+
+# Connection handling with error recovery
+db = MySQLConnection(
+    host="localhost",
+    port=3306,
+    user="app_user",
+    password="secure_password",
+    database="application_db"
+)
+
+try:
+    with db:
+        # Operations that might fail
+        db.insert('orders', [{'customer_name': 'Test', 'total_amount': -10}])
+except Exception as e:
+    # Transaction automatically rolled back
+    print(f"Operation failed: {e}")
+    # Connection is safely closed
+
+# Check connection status
+if not db.is_connected():
+    print("Connection safely closed after error")
 ```
 
 
@@ -341,6 +608,7 @@ Test files in `tests/` directory:
 - `test_data_text.py` - Text processing tests
 - `test_date_time.py` - Date/time operations tests
 - `test_db_sqlite.py` - SQLite database operations tests (100+ test cases covering initialization, CRUD operations, transactions, timestamp handling, dtype conversions, and context manager)
+- `test_db_mysql.py` - MySQL database operations tests (150+ test cases covering connection management, CRUD operations with SQLAlchemy, batch inserts, transaction rollback, timezone handling, parameter validation, and SQL injection prevention)
 - `test_db_factory.py` - Database factory pattern tests (covering connection creation, connector registration, type validation, and extensibility)
 - `test_environment_loader.py` - Environment loading tests
 - `test_file_compress.py` - File compression tests
